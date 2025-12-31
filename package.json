@@ -2,16 +2,24 @@
   "name": "jarvis",
   "version": "0.1.0",
   "private": true,
+  "description": "My ADK Agent",
+  "main": "agent.ts",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@google/adk": "^0.2.1",
+    "@google/adk-devtools": "^0.2.1",
+    "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
