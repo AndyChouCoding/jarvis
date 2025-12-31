@@ -14,8 +14,10 @@
   "dependencies": {
     "@google/adk": "^0.2.1",
     "@google/adk-devtools": "^0.2.1",
+    "googleapis": "^169.0.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
+    "next-auth": "^4.24.13",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",

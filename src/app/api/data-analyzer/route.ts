@@ -1,4 +1,4 @@
-import { rootAgent } from "@/../agent";
+import { dataAgent } from "@/agents/data-agent";
 import { Runner, InMemorySessionService } from "@google/adk";
 
 export async function POST(req: Request) {
@@ -7,13 +7,12 @@ export async function POST(req: Request) {
     
     // Initialize session service
     const sessionService = new InMemorySessionService();
-    // Use provided sessionId or default if missing
-    const finalSessionId = sessionId || "session-chat-default";
+    const finalSessionId = sessionId || "session-data-analyzer-default";
     await sessionService.createSession({ appName: "jarvis", sessionId: finalSessionId, userId: "user-1" });
 
     const runner = new Runner({
         appName: "jarvis",
-        agent: rootAgent,
+        agent: dataAgent,
         sessionService: sessionService,
     });
 
@@ -26,7 +25,6 @@ export async function POST(req: Request) {
     let lastResponse = "";
     
     for await (const event of iterator) {
-        // console.log("Full Event Payload:", JSON.stringify(event, null, 2));
         // @ts-ignore
         if ((event as any).errorCode) {
             // @ts-ignore
@@ -43,15 +41,12 @@ export async function POST(req: Request) {
     }
 
     if (!lastResponse) {
-       // If standard accumulation failed, try finding the last event
-       // Or simply return a placeholder if debugging
-       // In a real app we'd fully type the events
        lastResponse = "Response received (check server logs for details if empty)";
     }
 
     return Response.json({ response: lastResponse });
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to process message" }, { status: 500 });
+    return Response.json({ error: "Failed to analyze data" }, { status: 500 });
   }
 }

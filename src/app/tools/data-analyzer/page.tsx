@@ -2,7 +2,7 @@
 
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User } from "lucide-react";
+import { Send, BarChart3, User, Upload } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 type Message = {
@@ -10,7 +10,7 @@ type Message = {
   content: string;
 };
 
-export default function ChatPage() {
+export default function DataAnalyzerPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -35,24 +35,24 @@ export default function ChatPage() {
 
     try {
       // Generate or retrieve session ID
-      let sessionId = localStorage.getItem("chat_session_id");
+      let sessionId = localStorage.getItem("data_analyzer_session_id");
       if (!sessionId) {
         sessionId = crypto.randomUUID();
-        localStorage.setItem("chat_session_id", sessionId);
+        localStorage.setItem("data_analyzer_session_id", sessionId);
       }
 
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/data-analyzer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: input, sessionId }),
       });
 
-      if (!res.ok) throw new Error("Failed to send message");
+      if (!res.ok) throw new Error("Failed to analyze data");
 
       const data = await res.json();
       const assistantMessage: Message = {
         role: "assistant",
-        content: data.response || "Sorry, I encountered an error.",
+        content: data.response || "Sorry, I could not analyze the data.",
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
@@ -72,8 +72,8 @@ export default function ChatPage() {
         {/* Header */}
         <div className="border-b border-zinc-200 p-4 dark:border-zinc-800">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Bot className="h-5 w-5 text-indigo-600" />
-            Chat Assistant
+            <BarChart3 className="h-5 w-5 text-purple-600" />
+            Data Analyzer
           </h2>
         </div>
 
@@ -81,8 +81,9 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-zinc-500 text-center">
-              <Bot className="h-12 w-12 mb-2 opacity-20" />
-              <p>Ask me anything! I can search Google or tell you the time.</p>
+              <BarChart3 className="h-12 w-12 mb-2 opacity-20" />
+              <p>Paste your data here (CSV, JSON, Text) and I'll analyze it for you.</p>
+              <p className="text-sm mt-2 opacity-60">Try pasting a small CSV of sales data.</p>
             </div>
           )}
           {messages.map((msg, idx) => (
@@ -93,14 +94,14 @@ export default function ChatPage() {
               }`}
             >
               {msg.role === "assistant" && (
-                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 dark:bg-indigo-900/50">
-                   <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 dark:bg-purple-900/50">
+                   <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
               )}
               <div
                 className={`rounded-lg px-4 py-2 max-w-[80%] ${
                   msg.role === "user"
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-purple-600 text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
                 }`}
               >
@@ -117,11 +118,11 @@ export default function ChatPage() {
           ))}
            {isLoading && (
               <div className="flex gap-3 justify-start">
-                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 dark:bg-indigo-900/50">
-                   <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 dark:bg-purple-900/50">
+                   <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg px-4 py-2">
-                   <span className="animate-pulse">Thinking...</span>
+                   <span className="animate-pulse">Analyzing...</span>
                 </div>
               </div>
            )}
@@ -131,18 +132,19 @@ export default function ChatPage() {
         {/* Input */}
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
           <form onSubmit={handleSubmit} className="flex gap-2">
+             {/* Note: File upload would require more logic to read file content, sticking to text input for MVP */}
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 rounded-md border border-zinc-300 px-4 py-2 focus:border-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              placeholder="Paste data or ask questions..."
+              className="flex-1 rounded-md border border-zinc-300 px-4 py-2 focus:border-purple-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="h-5 w-5" />
             </button>
