@@ -1,6 +1,5 @@
 import { AppIcon } from "@/components/dashboard/AppIcon";
-import { Dock } from "@/components/mobile/Dock";
-import { Clock, Code2, BarChart3, Bot, Calendar, Settings, Mail, Music, Map, Camera, FolderOpen } from "lucide-react";
+import { Clock, Code2, BarChart3, Bot, Calendar, Settings } from "lucide-react";
 import { ConnectGoogle } from "@/components/workspace/ConnectGoogle";
 
 export default function Home() {
@@ -40,35 +39,8 @@ export default function Home() {
         icon: Settings, 
         href: "/settings", 
         color: "bg-zinc-600" 
-    },
-    {
-        title: "Mail",
-        icon: Mail,
-        href: "/mail",
-        color: "bg-blue-400"
-    },
-    {
-        title: "Files",
-        icon: FolderOpen,
-        href: "/files",
-        color: "bg-indigo-400"
-    },
-    {
-        title: "Maps",
-        icon: Map,
-        href: "/maps",
-        color: "bg-green-500"
-    },
-    {
-        title: "Camera",
-        icon: Camera,
-        href: "/camera",
-        color: "bg-zinc-400"
     }
   ];
-
-  const dockApps = apps.slice(0, 4); // First 4 apps in Dock
-  const gridApps = apps.slice(4); // Rest in Grid
 
   return (
     <div className="h-screen w-full bg-black text-white overflow-hidden relative">
@@ -84,46 +56,32 @@ export default function Home() {
         <main className="relative z-10 flex flex-col h-full">
             
             {/* Simple Minimalist Header */}
-            <div className="w-full flex justify-between items-center p-6 z-20">
-                <div className="text-xl font-bold tracking-tight text-white/80">
+            <div className="w-full flex justify-between items-center p-8 z-20">
+                <div className="text-2xl font-bold tracking-tight text-white/90">
                     Jarvis OS
                 </div>
                 <div className="flex items-center gap-4">
-                     <div className="opacity-80 hover:opacity-100 transition-opacity">
+                     <div className="opacity-90 hover:opacity-100 transition-opacity">
                         <ConnectGoogle />
                      </div>
                 </div>
             </div>
 
-            {/* App Grid Area */}
-            <div className="flex-1 px-6 pt-4 pb-36 overflow-y-auto no-scrollbar">
-                <div className="grid grid-cols-4 gap-y-10 gap-x-6 place-items-center max-w-2xl mx-auto">
-                    {gridApps.map((app) => (
-                        <AppIcon 
-                            key={app.title} 
-                            icon={app.icon} 
-                            label={app.title} 
-                            href={app.href} 
-                            color={app.color} 
-                        />
+            {/* App Grid Area - Centered for Desktop */}
+            <div className="flex-1 flex items-center justify-center p-12 overflow-y-auto no-scrollbar">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-12 gap-y-16 place-items-center max-w-5xl mx-auto">
+                    {apps.map((app) => (
+                        <div key={app.title} className="hover:-translate-y-2 transition-transform duration-300">
+                             <AppIcon 
+                                icon={app.icon} 
+                                label={app.title} 
+                                href={app.href} 
+                                color={app.color} 
+                            />
+                        </div>
                     ))}
-                     {/* Add some filler empty slots if needed to push content up from dock */}
                 </div>
             </div>
-
-            {/* Dock */}
-            <Dock>
-                 {dockApps.map((app) => (
-                    <div key={app.title} className="hover:-translate-y-2 transition-transform duration-300">
-                        <AppIcon 
-                            icon={app.icon} 
-                            label="" // No label in dock
-                            href={app.href} 
-                            color={app.color} 
-                        />
-                    </div>
-                ))}
-            </Dock>
 
         </main>
     </div>
