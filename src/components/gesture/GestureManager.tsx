@@ -20,7 +20,7 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
   const lastClickTime = useRef(0);
   const lastHandPos = useRef<{ x: number; y: number; time: number } | null>(null);
   const lastHoveredElement = useRef<HTMLElement | null>(null);
-  const originalStyle = useRef<string | null>(null); // Store original style of hovered element
+  const lastGestureMode = useRef<string>("NONE");
   
   // State for Visuals
   const [landmarks, setLandmarks] = useState<any[]>([]);
@@ -32,6 +32,7 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
   
   // Debug State
   const [gestureMode, setGestureMode] = useState<string>("NONE");
+  const [pinchDistance, setPinchDistance] = useState<number>(0);
 
   // Initialize MediaPipe HandLandmarker
   useEffect(() => {
@@ -75,9 +76,11 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
     setWebcamRunning(true);
   };
 
+
   useEffect(() => {
     if (webcamRunning && videoRef.current) {
-        const constraints = { video: { width: 1280, height: 720 } };
+        // OPTIMIZATION: Reduce resolution to 640x480 to save processing power
+        const constraints = { video: { width: 640, height: 480 } };
         navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
@@ -92,17 +95,28 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
   const isFingerExtended = (landmarks: any[], fingerTipIndex: number, fingerPipIndex: number) => {
       const tip = landmarks[fingerTipIndex];
       const pip = landmarks[fingerPipIndex];
-      // Basic check: is tip higher (smaller Y) than PIP? (Assumes upright hand)
-      // Adding a small buffer to prevent flickering
       return tip.y < pip.y; 
   };
 
+  const lastVideoTime = useRef(-1);
+
   const predictWebcam = () => {
     if (videoRef.current && handLandmarker) {
+        // OPTIMIZATION: Throttle to ~30 FPS
+        const nowMs = performance.now();
+        if (nowMs - lastVideoTime.current < 33) {
+             if (webcamRunning) requestAnimationFrame(predictWebcam);
+             return;
+        }
+        lastVideoTime.current = nowMs;
+
         let startTimeMs = performance.now();
         const detections = handLandmarker.detectForVideo(videoRef.current, startTimeMs);
         
         if (detections.landmarks && detections.landmarks.length > 0) {
+             // Define 'now' at the top so scope is correct for all logic
+             const now = Date.now();
+
              const hand = detections.landmarks[0];
              setLandmarks(hand);
              
@@ -119,10 +133,6 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
              
              // 1. Is Index Extended? (Tip 8 vs PIP 6)
              const isIndexExtended = isFingerExtended(hand, 8, 6);
-             
-             // 2. Are others curled? (Tip vs PIP, inverted logic or just below)
-             // Relaxed: Just check if middle finger tip (12) is below middle pip (10)
-             // or just check if they are "not extended"
              const isMiddleExtended = isFingerExtended(hand, 12, 10);
              const isRingExtended = isFingerExtended(hand, 16, 14);
              const isPinkyExtended = isFingerExtended(hand, 20, 18);
@@ -132,19 +142,38 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
              
              // Open Palm: All main 4 fingers extended
              const isHandOpen = isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended;
-
+             
+             // Fist: All main 4 fingers curled (NOT extended)
+             const isFist = !isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended;
 
              let currentMode = "NONE";
              if (isHandOpen) currentMode = "OPEN_PALM";
              else if (isPointingMode) currentMode = "POINTING";
+             else if (isFist) currentMode = "FIST";
+             
              setGestureMode(currentMode);
+
+             // --- Home Gesture: Open Palm -> Fist ---
+             if (lastGestureMode.current === "OPEN_PALM" && currentMode === "FIST") {
+                 if (now - lastClickTime.current > 1500) {
+                     console.log("TRIGGER HOME (Fist Clench)");
+                     window.location.href = "/"; 
+                     lastClickTime.current = now;
+                 }
+             }
+             
+             if (currentMode !== "NONE") {
+                lastGestureMode.current = currentMode;
+             }
 
              // --- Pinch/Click Logic ---
              const thumbTip = hand[4];
              const distance = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+
+             setPinchDistance(distance); // Update debug state
              
-             // TUNING: Increased threshold for easier clicking (0.05 -> 0.1)
-             const PINCH_THRESHOLD = 0.1; 
+             // TUNING: Increased threshold for easier clicking (0.1 -> 0.15)
+             const PINCH_THRESHOLD = 0.15; 
              
              const isPinching = distance < PINCH_THRESHOLD;
              
@@ -152,13 +181,12 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
              // Allow pinch if hand is NOT open palm. 
              // This covers "Pointing" but also "Sloppy Pointing" where maybe the ring finger is slightly out.
              // Crucially, it still blocks the "Open Palm" false positives.
-             const validClickState = isPinching && !isHandOpen; 
+             const validClickState = isPinching && !isHandOpen && !isFist; // Ensure Fist doesn't click
              
              setIsPinching(validClickState);
 
              
              // --- Swipe Up Gesture Logic (Back) ---
-             const now = Date.now();
              const currentY = indexTip.y; 
              const currentX = indexTip.x;
              
@@ -185,14 +213,16 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
 
              
              // --- Interaction & Hover Logic ---
-             const elem = document.elementFromPoint(x, y) as HTMLElement;
+             const rawElem = document.elementFromPoint(x, y) as HTMLElement;
              
+             // Smart Hit Testing: Traverse up to find clickable parent
+             const clickableElem = rawElem?.closest('a, button, input, [role="button"]') as HTMLElement;
+             const elem = clickableElem || rawElem;
+
              // Explicit "Response" from UI: Add outline/highlight to hovered element
              if (elem && elem !== lastHoveredElement.current) {
                  // CLEANUP Previous
                  if (lastHoveredElement.current) {
-                     // Try to restore style? Or just remove outline
-                     // Not perfect if element had outline, but good enough for demo
                      lastHoveredElement.current.style.outline = "";
                      lastHoveredElement.current.style.boxShadow = "";
                  }
@@ -244,6 +274,7 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
         } else {
             setLandmarks([]);
             setGestureMode("NO_HAND");
+            lastGestureMode.current = "NONE";
         }
         
         if (webcamRunning) {
@@ -289,8 +320,11 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
             </div>
             
             {/* HUD Info */}
-            <div className="absolute bottom-1 left-1 bg-black/50 text-[10px] text-cyan-500 font-mono px-1 rounded">
-                MODE: {gestureMode}
+            <div className="absolute bottom-1 left-1 bg-black/50 text-[10px] text-cyan-500 font-mono px-1 rounded flex flex-col gap-1">
+                <div>MODE: {gestureMode}</div>
+                {webcamRunning && (
+                    <div>DIST: {pinchDistance.toFixed(3)} | <span className="text-green-400">0.15</span></div>
+                )}
             </div>
 
             {loading && (
@@ -317,4 +351,3 @@ const GestureManager: React.FC<GestureManagerProps> = ({ onGesture }) => {
 };
 
 export default GestureManager;
-
