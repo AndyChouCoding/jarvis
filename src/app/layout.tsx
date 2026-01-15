@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white overflow-hidden relative selection:bg-cyan-500/30 touch-none`}
       >
         <NextAuthSessionProvider>
           {children}
