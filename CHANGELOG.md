@@ -1,18 +1,22 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-## [1.0.0] - 2026-01-15
+## [2.0.0] - 2026-01-15
 
 ### Added
-- **Google Workspace Integration**:
-    - Authentication with Google Accounts.
-    - Calendar access and management features.
-- **Chat Interface**:
-    - Complete chat UI with message history.
-    - Integration with ADK agent backend.
-- **Session Management**:
-    - robust session handling fixes.
+- **Advanced Gesture Control**: Full hands-free navigation system.
+    - **Smart Click**: Relaxed "Single Finger" pinch detection for easier interaction.
+    - **Visual Feedback**: Cursor pulses bright green and displays "CLICK!!" on activation.
+    - **Back Gesture**: 5-finger open palm swipe up to navigate back.
+    - **Hover Effects**: Virtual cursor now triggers native-like visual feedback (Cyan outline) on interactive elements.
+- **HUD System**: On-screen debug overlay showing current gesture mode (POINTING vs OPEN_PALM).
 
 ### Changed
-- Updated project structure for better component organization.
+- Refined gesture recognition sensitivity for better usability.
+- Improved virtual cursor visuals with dynamic animations.
+
+## [1.0.0] - 2025-12-31
+
+### Added
+- Initial Release
+- Google Workspace Integration
+- Session Management
